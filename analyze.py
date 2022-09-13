@@ -10,11 +10,11 @@ import pandas
 import matplotlib.pyplot as plt
 
 
-def get_data(video_url):
+def get_data(video_url,comments):
     source_config = YoutubeScrapperConfig(
     video_url= video_url,
     fetch_replies=False,
-    max_comments=20,
+    max_comments=comments,
     lookup_period="1Y",
     )
     source = YoutubeScrapperSource()
@@ -92,9 +92,11 @@ def show(labels, values):
 def main():
     parser = argparse.ArgumentParser("This file gives sentiment analysis of youtube comments")
     parser.add_argument("-v",help = "Youtube video link")
+    parser.add_argument("-n",help="Max Number of comments we want fetched")
     args = parser.parse_args()
     v = args.v
-    comments,likes = get_data(v)
+    n = args.n
+    comments,likes = get_data(v,n)
     df = pandas.DataFrame(columns = ["comments","likes"])
     df["comments"] = comments
     df["likes"] = likes
