@@ -1,7 +1,6 @@
 from obsei.source import YoutubeScrapperSource, YoutubeScrapperConfig
 import argparse
 from transformers import AutoModelForSequenceClassification
-from transformers import TFAutoModelForSequenceClassification
 from transformers import AutoTokenizer
 import numpy as np
 from scipy.special import softmax
