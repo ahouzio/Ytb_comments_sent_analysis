@@ -25,7 +25,7 @@ def get_data(video_url,comments):
     for idx, source_response in enumerate(source_response_list):
         comments.append(source_response.__dict__['meta']['text'])
         likes.append(source_response.__dict__['meta']['votes'])
-    
+    likes = [len(like) for like in likes]
     return comments, likes
 
 # Preprocess text (username and link placeholders)
@@ -57,12 +57,14 @@ def load_model():
     model.save_pretrained(MODEL)
     return model, labels, tokenizer
     
-def vid_score(labels,model, df,tokenizer):
+def vid_score(labels,model, comments,likes,tokenizer):
     label_length = len(labels)
-    print(label_length)
     vid_score = [0 for i in range(label_length)]
-    comment_len = len(df.loc[:, "comments"])
-    for comment in df.loc[:, "comments"]:
+    comment_nbr = len(comments)
+    
+    for j in range(comment_nbr):
+        comment = comments[j]
+        like_nbr = likes[j]
         comment = preprocess(comment)
         encoded_input = tokenizer(comment, return_tensors='pt')
         output = model(**encoded_input)
@@ -73,15 +75,17 @@ def vid_score(labels,model, df,tokenizer):
     for i in range(scores.shape[0]):
         l = labels[ranking[i]]
         s = scores[ranking[i]]
-        vid_score[i] += s
+        
+        vid_score[ranking[i]] += s*like_nbr
         print(f"{i+1}) {l} {np.round(float(s), 4)}")
-    vid_score = [e/comment_len for e in vid_score]
+    like_sum = sum(likes)
+    vid_score = [e/like_sum for e in vid_score]
     return vid_score
     
 def show(labels, values):
     
     
-    plt.rcParams['figure.figsize'] = [20, 10]
+    plt.rcParams['figure.figsize'] = [10, 5]
     fig1, ax1 = plt.subplots()
     ax1.pie(values, labels=labels, autopct='%1.1f%%',
             shadow=True, startangle=90)
@@ -97,11 +101,8 @@ def main():
     v = args.v
     n = args.n
     comments,likes = get_data(v,n)
-    df = pandas.DataFrame(columns = ["comments","likes"])
-    df["comments"] = comments
-    df["likes"] = likes
     model, labels, tokenizer = load_model()
-    score = vid_score(labels,model, df,tokenizer)
+    score = vid_score(labels,model, comments,likes,tokenizer)
     show(labels, score)
     
 if __name__ == "__main__":
