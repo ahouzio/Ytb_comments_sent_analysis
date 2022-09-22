@@ -3,6 +3,9 @@ The goal of this project is to use the pretrained twitter ROBERTA model to get t
 
 # Usage :
 ```
-python analyze.py -v video_link -n max_comments
+python analyze.py -v video_link 
 ```
-**max_comments** is an argument to indicate maximum number of comments we want to analyze.
+For example for this video https://www.youtube.com/watch?v=lj5GXZaE7qs, we got :
+
+
+![What is this](pie.png)
