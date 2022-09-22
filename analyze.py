@@ -1,6 +1,7 @@
 from obsei.source import YoutubeScrapperSource, YoutubeScrapperConfig
 import argparse
 from transformers import AutoModelForSequenceClassification
+from transformers import TFAutoModelForSequenceClassification
 from transformers import AutoTokenizer
 import numpy as np
 from scipy.special import softmax
@@ -10,11 +11,11 @@ import pandas
 import matplotlib.pyplot as plt
 
 
-def get_data(video_url,comments):
+def get_data(video_url):
     source_config = YoutubeScrapperConfig(
     video_url= video_url,
     fetch_replies=False,
-    max_comments=comments,
+    max_comments=40,
     lookup_period="1Y",
     )
     source = YoutubeScrapperSource()
@@ -51,22 +52,25 @@ def load_model():
         html = f.read().decode('utf-8').split("\n")
         csvreader = csv.reader(html, delimiter='\t')
     labels = [row[1] for row in csvreader if len(row) > 1]
-
     # PT
     model = AutoModelForSequenceClassification.from_pretrained(MODEL)
     model.save_pretrained(MODEL)
+    fw = "pt"
+
+
+
     return model, labels, tokenizer
     
 def vid_score(labels,model, comments,likes,tokenizer):
     label_length = len(labels)
     vid_score = [0 for i in range(label_length)]
     comment_nbr = len(comments)
-    
+
     for j in range(comment_nbr):
         comment = comments[j]
         like_nbr = likes[j]
         comment = preprocess(comment)
-        encoded_input = tokenizer(comment, return_tensors='pt')
+        encoded_input = tokenizer(comment, return_tensors="pt")
         output = model(**encoded_input)
         scores = output[0][0].detach().numpy()
         scores = softmax(scores)
@@ -90,20 +94,18 @@ def show(labels, values):
     ax1.pie(values, labels=labels, autopct='%1.1f%%',
             shadow=True, startangle=90)
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-
+    plt.savefig("pie.png")
     plt.show()
     
 def main():
     parser = argparse.ArgumentParser("This file gives sentiment analysis of youtube comments")
     parser.add_argument("-v",help = "Youtube video link")
-    parser.add_argument("-n",help="Max Number of comments we want fetched")
     args = parser.parse_args()
     v = args.v
-    n = args.n
-    comments,likes = get_data(v,n)
+    comments,likes = get_data(v)
     model, labels, tokenizer = load_model()
-    score = vid_score(labels,model, comments,likes,tokenizer)
-    show(labels, score)
+    res = vid_score(labels,model, comments,likes,tokenizer)
+    show(labels, res)
     
 if __name__ == "__main__":
     main()
